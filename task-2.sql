@@ -37,6 +37,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE OR REPLACE FUNCTION move_product()
+  RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE company
+  SET products_num = products_num - 1
+  WHERE company.id = OLD.company_id;
+
+  UPDATE company
+  SET products_num = products_num + 1
+  WHERE company.id = NEW.company_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 
 CREATE TRIGGER process_insert
 AFTER INSERT ON product
@@ -47,3 +61,9 @@ CREATE TRIGGER process_delete
 AFTER DELETE ON product
 FOR EACH ROW
 EXECUTE PROCEDURE decrement_products_num();
+
+CREATE TRIGGER process_update
+AFTER UPDATE ON product
+FOR EACH ROW
+WHEN (OLD.company_id <> NEW.company_id)
+EXECUTE PROCEDURE move_product();
